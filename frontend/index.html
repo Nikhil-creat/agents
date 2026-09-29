@@ -21,6 +21,7 @@ svg{width:100%;max-height:300px}svg line{stroke:var(--line)}svg text{fill:var(--
 #log{font:12px/1.6 'JetBrains Mono';max-height:330px;overflow:auto;white-space:pre-wrap;color:#c5c9ff}
 #gate{display:none;border:1px solid var(--am);border-radius:12px;padding:14px;margin-top:12px;background:rgba(255,180,84,.08)}#gate button{padding:8px 16px;margin-right:8px}#gate .no{background:0;border:1px solid var(--am);color:var(--am)}
 #ans{white-space:pre-wrap}
+.dev{margin:28px auto 0;max-width:720px;text-align:center}.dev small{color:var(--dim)}.dev h2{margin:4px 0;font-size:clamp(24px,6vw,38px);letter-spacing:-.02em;background:linear-gradient(90deg,var(--cy),var(--vi));-webkit-background-clip:text;color:transparent}.dev p{margin:0 0 14px;color:var(--dim)}.links{display:flex;flex-wrap:wrap;gap:8px;justify-content:center}.links a{color:var(--ink);text-decoration:none;border:1px solid var(--line);border-radius:999px;padding:8px 14px;font-size:13px}.links a:hover,.links a:focus-visible{border-color:var(--cy);box-shadow:0 0 16px rgba(94,231,255,.3)}
 </style></head><body><canvas id="bg"></canvas>
 <header><div><h1>AGENTS</h1><p class="sub">Multi-agent orchestration with tool use, memory and human approval.</p></div>
 <div class="row"><input id="api" placeholder="API URL (blank = demo)" aria-label="API URL" style="width:210px"><span class="pill" id="mode">demo</span></div></header>
@@ -31,6 +32,7 @@ svg{width:100%;max-height:300px}svg line{stroke:var(--line)}svg text{fill:var(--
 <div class="pan"><h3>Answer</h3><div id="ans">Waiting for a task.</div></div></div>
 <div><div class="pan"><div class="stats"><div><b id="s1">0</b><span>steps</span></div><div><b id="s2">0</b><span>tool calls</span></div><div><b id="s3">0</b><span>memories</span></div><div><b id="s4">0s</b><span>elapsed</span></div></div></div>
 <div class="pan"><h3>Live event stream</h3><div id="log"></div></div></div></div>
+<footer class="pan dev"><small>Designed and developed by</small><h2>Nikhil Chary Sriramoju</h2><p>BTech CSE, Final Year</p><div class="links"><a href="https://github.com/Nikhil-creat" target="_blank" rel="noopener">GitHub</a><a href="https://in.linkedin.com/in/nikhil-chary-sriramoju-95041b38a" target="_blank" rel="noopener">LinkedIn</a><a href="mailto:sriramojunikhil66@gmail.com">Email</a><a href="https://www.instagram.com/nikhil__sriramoju" target="_blank" rel="noopener">Instagram</a><a href="https://www.facebook.com/profile.php?id=100079201124141" target="_blank" rel="noopener">Facebook</a></div></footer>
 <script>
 const $=id=>document.getElementById(id),sleep=ms=>new Promise(r=>setTimeout(r,ms));
 /* constellation */
