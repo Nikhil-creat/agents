@@ -1,0 +1,15 @@
+fastapi
+uvicorn[standard]
+celery[redis]
+redis
+langgraph
+langgraph-checkpoint-postgres
+psycopg[binary,pool]
+langchain-openai
+langchain-anthropic
+langchain-mcp-adapters
+chromadb
+pydantic
+httpx
+prometheus-client
+pytest

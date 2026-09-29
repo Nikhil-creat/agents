@@ -1,0 +1,24 @@
+services:
+  api:
+    build: ./backend
+    command: uvicorn app.main:app --host 0.0.0.0 --port 8000
+    env_file: .env
+    ports: ["8000:8000"]
+    volumes: ["./frontend:/frontend"]
+    depends_on: [postgres, redis, chroma]
+  worker:
+    build: ./backend
+    command: celery -A app.worker.celery worker -P threads -l info -c 8
+    env_file: .env
+    ports: ["9100:9100"]
+    depends_on: [postgres, redis, chroma]
+  postgres:
+    image: postgres:16
+    environment: {POSTGRES_USER: nexus, POSTGRES_PASSWORD: nexus, POSTGRES_DB: nexus}
+    volumes: ["pg:/var/lib/postgresql/data"]
+  redis:
+    image: redis:7
+  chroma:
+    image: chromadb/chroma:latest
+    volumes: ["chroma:/data"]
+volumes: {pg: {}, chroma: {}}

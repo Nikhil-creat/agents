@@ -1,0 +1,78 @@
+<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>AGENTS · Orchestration Console</title>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;600;700&family=JetBrains+Mono&display=swap" rel="stylesheet">
+<style>
+:root{--bg:#090a1f;--glass:rgba(150,160,255,.07);--line:rgba(150,160,255,.18);--ink:#e9ebff;--dim:#8b90c4;--cy:#5ee7ff;--vi:#8b7bff;--am:#ffb454;--ok:#6dffb0}
+*{box-sizing:border-box}body{margin:0;min-height:100vh;background:radial-gradient(900px 500px at 10% -10%,#2a2470,transparent 60%),radial-gradient(700px 500px at 100% 100%,#0d3a5c,transparent 60%),var(--bg);color:var(--ink);font:15px/1.5 'Space Grotesk',sans-serif;padding:22px}
+#bg{position:fixed;inset:0;z-index:-1;width:100%;height:100%}
+header{display:flex;justify-content:space-between;align-items:flex-end;gap:12px;flex-wrap:wrap;margin-bottom:18px}
+h1{font-size:clamp(38px,7vw,72px);letter-spacing:-.04em;margin:0;line-height:1;background:linear-gradient(90deg,var(--cy),var(--vi));-webkit-background-clip:text;color:transparent}
+.sub{color:var(--dim);margin:6px 0 0;max-width:52ch}
+.pill{font:12px 'JetBrains Mono';border:1px solid var(--line);border-radius:999px;padding:6px 12px;color:var(--dim)}.pill.live{color:var(--ok);border-color:var(--ok)}
+.grid{display:grid;grid-template-columns:1.3fr 1fr;gap:16px}@media(max-width:860px){.grid{grid-template-columns:1fr}}
+.pan{background:var(--glass);border:1px solid var(--line);border-radius:18px;padding:16px;backdrop-filter:blur(14px)}.pan+.pan{margin-top:16px}
+.pan h3{margin:0 0 10px;font-size:13px;font-weight:600;color:var(--dim)}
+.row{display:flex;gap:8px}input{flex:1;min-width:0;background:#0d0f2b;border:1px solid var(--line);border-radius:10px;color:var(--ink);padding:12px;font:inherit}
+button{background:linear-gradient(135deg,var(--cy),var(--vi));border:0;border-radius:10px;padding:0 18px;font:600 14px 'Space Grotesk';color:#07081c;cursor:pointer}:focus-visible{outline:2px solid var(--cy)}
+svg{width:100%;max-height:300px}svg line{stroke:var(--line)}svg text{fill:var(--dim);font-size:11px;text-anchor:middle}
+.ag circle{fill:#0d0f2b;stroke:var(--line);stroke-width:1.5;transition:.3s}.ag.on circle{fill:var(--cy);stroke:var(--cy);filter:drop-shadow(0 0 8px var(--cy))}.ag.on text{fill:var(--ink)}
+.ag.hitl circle{fill:var(--am);stroke:var(--am);filter:drop-shadow(0 0 8px var(--am))}
+.stats{display:grid;grid-template-columns:repeat(4,1fr);gap:8px}.stats div{border:1px solid var(--line);border-radius:12px;padding:10px}.stats b{font-size:24px;display:block}.stats span{font-size:12px;color:var(--dim)}
+#log{font:12px/1.6 'JetBrains Mono';max-height:330px;overflow:auto;white-space:pre-wrap;color:#c5c9ff}
+#gate{display:none;border:1px solid var(--am);border-radius:12px;padding:14px;margin-top:12px;background:rgba(255,180,84,.08)}#gate button{padding:8px 16px;margin-right:8px}#gate .no{background:0;border:1px solid var(--am);color:var(--am)}
+#ans{white-space:pre-wrap}
+</style></head><body><canvas id="bg"></canvas>
+<header><div><h1>AGENTS</h1><p class="sub">Multi-agent orchestration with tool use, memory and human approval.</p></div>
+<div class="row"><input id="api" placeholder="API URL (blank = demo)" aria-label="API URL" style="width:210px"><span class="pill" id="mode">demo</span></div></header>
+<div class="grid"><div>
+<div class="pan"><div class="row"><input id="q" aria-label="Task" value="Research microgrid failure modes and save a summary file"><button id="go">Run agents</button></div>
+<svg id="map" viewBox="0 0 300 260" role="img" aria-label="Agent constellation"></svg>
+<div id="gate"><b>Approval needed</b><div id="why" style="color:var(--dim);margin:6px 0 12px"></div><button id="ok">Approve</button><button class="no" id="no">Reject</button></div></div>
+<div class="pan"><h3>Answer</h3><div id="ans">Waiting for a task.</div></div></div>
+<div><div class="pan"><div class="stats"><div><b id="s1">0</b><span>steps</span></div><div><b id="s2">0</b><span>tool calls</span></div><div><b id="s3">0</b><span>memories</span></div><div><b id="s4">0s</b><span>elapsed</span></div></div></div>
+<div class="pan"><h3>Live event stream</h3><div id="log"></div></div></div></div>
+<script>
+const $=id=>document.getElementById(id),sleep=ms=>new Promise(r=>setTimeout(r,ms));
+/* constellation */
+const AG=["memory","planner","researcher","analyst","operator","critic","writer"],NODE={recall:["memory"],plan:["planner"],critic:["critic"],synthesize:["writer"],remember:["memory"]};
+let h='';AG.forEach((a,i)=>{const t=i/AG.length*6.283-1.57,x=150+95*Math.cos(t),y=130+95*Math.sin(t);
+h+=`<line x1="150" y1="130" x2="${x}" y2="${y}"/><g class="ag" id="a-${a}"><circle cx="${x}" cy="${y}" r="16"/><text x="${x}" y="${y+30}">${a}</text></g>`});
+$("map").innerHTML=h+'<circle cx="150" cy="130" r="9" fill="#8b7bff"/><text x="150" y="134" style="fill:#07081c;font-size:8px">core</text>';
+const light=(l,c="on")=>{AG.forEach(a=>$("a-"+a).setAttribute("class","ag"));l.forEach(a=>$("a-"+a)&&$("a-"+a).setAttribute("class","ag "+c))};
+/* state */
+let rid,es,demo=true,t0,st={s:0,t:0,m:0},tick;
+const log=t=>{$("log").textContent+=t+"\n";$("log").scrollTop=1e9},api=()=>$("api").value.replace(/\/$/,"");
+function stats(){$("s1").textContent=st.s;$("s2").textContent=st.t;$("s3").textContent=st.m;$("s4").textContent=Math.round((Date.now()-t0)/1000)+"s"}
+function onEv(ev){
+ if(ev.__interrupt__){const v=ev.__interrupt__[0].value||{};light(["operator"],"hitl");$("why").textContent=(v.reason||"")+": "+(v.steps||[]).join(" | ");$("gate").style.display="block";log("⏸ paused for human approval");return}
+ if(ev.__done__){light([]);clearInterval(tick);stats();return}
+ if(ev.__error__){log("✖ "+ev.__error__);return}
+ for(const[k,v]of Object.entries(ev)){st.s++;let l=NODE[k]||[];
+  if(k==="execute"){const rs=(v&&v.results)||[];st.t+=rs.length;l=[...new Set(rs.map(r=>(r.match(/^\[(\w+)\//)||[])[1]).filter(Boolean))];if(!l.length)l=["researcher"]}
+  if(k==="recall")st.m+=((v&&v.context)||[]).length;
+  light(l);log("▸ "+k+" "+JSON.stringify(v).slice(0,200));if(v&&v.answer)$("ans").textContent=v.answer}stats()}
+async function post(u,b){return(await fetch(api()+u,{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(b)})).json()}
+async function detect(){demo=true;if(api()){try{demo=!(await fetch(api()+"/health")).ok}catch{}}$("mode").textContent=demo?"demo":"live";$("mode").className="pill"+(demo?"":" live")}
+$("api").onchange=detect;
+$("go").onclick=async()=>{await detect();$("log").textContent="";$("gate").style.display="none";st={s:0,t:0,m:0};t0=Date.now();clearInterval(tick);tick=setInterval(stats,1000);
+ if(demo)return demoRun();rid=(await post("/runs",{task:$("q").value})).id;es&&es.close();es=new EventSource(`${api()}/runs/${rid}/stream`);es.onmessage=e=>onEv(JSON.parse(e.data))};
+const decide=async a=>{$("gate").style.display="none";log(a?"✔ approved":"✖ rejected");demo?demoRest(a):post(`/runs/${rid}/resume`,{approve:a})};
+$("ok").onclick=()=>decide(true);$("no").onclick=()=>decide(false);
+/* demo mode: simulated agents */
+async function demoRun(){log("(demo mode: simulated agents)");
+ onEv({recall:{context:["past run: microgrid fault tree"]}});await sleep(700);
+ onEv({plan:{plan:["search: microgrid failures","calc: 2*21","write_file: summary.md"]}});await sleep(800);
+ onEv({__interrupt__:[{value:{reason:"High-risk tool calls",steps:["write_file: summary.md"]}}]})}
+async function demoRest(a){
+ onEv({execute:{results:["[researcher/search] islanding, inverter faults","[analyst/calc] 42",a?"[operator/write_file] written":"[operator] skipped"]}});await sleep(900);
+ onEv({critic:{score:.9,loops:1}});await sleep(700);
+ onEv({synthesize:{answer:a?"Top microgrid failure modes: unintentional islanding, inverter faults and sensor drift. Summary saved after your approval.":"Stopped: you rejected the file write, so only research results were returned."}});await sleep(700);
+ onEv({remember:{}});onEv({__done__:1})}
+/* ambient background */
+const c=$("bg"),x=c.getContext("2d"),P=[];let W,H;
+function size(){W=c.width=innerWidth;H=c.height=innerHeight}size();addEventListener("resize",size);
+for(let i=0;i<45;i++)P.push({x:Math.random()*W,y:Math.random()*H,vx:Math.random()-.5,vy:Math.random()-.5});
+function draw(){x.clearRect(0,0,W,H);P.forEach((p,i)=>{p.x=(p.x+p.vx*.3+W)%W;p.y=(p.y+p.vy*.3+H)%H;x.fillStyle="rgba(94,231,255,.5)";x.fillRect(p.x,p.y,2,2);
+ for(let j=i+1;j<P.length;j++){const d=Math.hypot(p.x-P[j].x,p.y-P[j].y);if(d<130){x.strokeStyle=`rgba(139,123,255,${.18-d/800})`;x.beginPath();x.moveTo(p.x,p.y);x.lineTo(P[j].x,P[j].y);x.stroke()}}});
+ if(!matchMedia("(prefers-reduced-motion:reduce)").matches)requestAnimationFrame(draw)}draw();
+</script></body></html>
