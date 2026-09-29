@@ -12,6 +12,16 @@ Multi-agent runtime with tool use (custom + MCP), short-term + semantic memory, 
 | UI | Live mission-control dashboard (frontend/index.html) |
 | Infra | Docker + docker-compose |
 
+## Designed and Developed by 
+# **NIKHIL CHARY SRIRAMOJU**
+BTech CSE (Final Year)
+
+- GitHub: [Nikhil-creat](https://github.com/Nikhil-creat)
+- LinkedIn: [nikhil-chary-sriramoju](https://in.linkedin.com/in/nikhil-chary-sriramoju-95041b38a)
+- Email: sriramojunikhil66@gmail.com
+- Instagram: [@nikhil__sriramoju](https://www.instagram.com/nikhil__sriramoju)
+- Facebook: [Profile](https://www.facebook.com/profile.php?id=100079201124141)
+
 ## Run
 ```
 cp .env.example .env   # add OPENAI_API_KEY / ANTHROPIC_API_KEY (optional: offline mode works)
